@@ -27,8 +27,8 @@ useEffect(() => {
   const imageElement = await fetchImg(page, perPage, searchImg);
 
   setTotalHits(imageElement.totalHits);
-  setImages(page === 1 ? imageElement.hits : [...images, ...imageElement.hits]);
-  setLoadMore(page < Math.ceil(imageElement.totalHits / perPage))
+  setImages(prevState => page === 1 ? imageElement.hits : [...prevState, ...imageElement.hits]);
+  setLoadMore(page < Math.ceil(imageElement.totalHits / 12))
 } catch (error) {
   console.error(error);
 } finally {
