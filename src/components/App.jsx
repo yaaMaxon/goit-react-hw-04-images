@@ -11,24 +11,22 @@ import { Modal } from "./Modal/Modal";
 export const App = () => {
   const [images, setImages] = useState(null);
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(12);
   const [isLoading, setIsLoading] = useState(false);
-  const [totalHits, setTotalHits] = useState(0);
   const [loadMore, setLoadMore] = useState(true);
   const [searchImg, setSearchImg] = useState('');
   const [modal, setModal] = useState({isOpen: false, data: '',});
+  const perPage = 12;
 
 useEffect(() => {
   if(!searchImg) return;
 
   const fetchAllImg = async () => {
- try {
+    try {
   setIsLoading(true)
   const imageElement = await fetchImg(page, perPage, searchImg);
 
-  setTotalHits(imageElement.totalHits);
   setImages(prevState => page === 1 ? imageElement.hits : [...prevState, ...imageElement.hits]);
-  setLoadMore(page < Math.ceil(imageElement.totalHits / 12))
+  setLoadMore(page < Math.ceil(imageElement.totalHits / perPage))
 } catch (error) {
   console.error(error);
 } finally {
