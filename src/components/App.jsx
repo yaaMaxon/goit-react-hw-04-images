@@ -1,146 +1,82 @@
-import { Component } from "react";
+import { useEffect, useState } from "react";
 import { fetchImg } from "services/api";
 import css from "./App.module.css";
 import { Loader } from "./Loader/Loader";
-import Searchbar  from "./Searchbar/Searchbar";
+import { Searchbar }  from "./Searchbar/Searchbar";
 import { ImageGallery } from "./ImageGallery/ImageGallery";
 import { ImageGalleryItem } from "./ImageGalleryItem/ImageGalleryItem";
 import { Button } from "./Button/Button";
-import Modal from "./Modal/Modal";
+import { Modal } from "./Modal/Modal";
 
-export class App extends Component {
-  state = {
-    images: null,
-    page: 1,
-    perPage: 12,
-    isLoading: false,
-    error: null,
-    totalHits: 0,
-    loadMore: true,
-    searchImg: '',
-    modal: {
-      isOpen: false,
-      data: '',
-    }
-  };
+export const App = () => {
+  const [images, setImages] = useState(null);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(12);
+  const [isLoading, setIsLoading] = useState(false);
+  const [totalHits, setTotalHits] = useState(0);
+  const [loadMore, setLoadMore] = useState(true);
+  const [searchImg, setSearchImg] = useState('');
+  const [modal, setModal] = useState({isOpen: false, data: '',});
 
+useEffect(() => {
+  if(!searchImg) return;
 
- componentDidMount() {
-    this.fetchAllImg();
-  }
+  const fetchAllImg = async () => {
+ try {
+  setIsLoading(true)
+  const imageElement = await fetchImg(page, perPage, searchImg);
 
-  componentDidUpdate(_, prevState) {
-if (
-      this.state.searchImg !== prevState.searchImg ||
-      this.state.page !== prevState.page
-    ) {
-      this.fetchAllImg();
-    }
-  }
-
-  fetchAllImg = async () => {
-const {page, perPage, searchImg} = this.state;
-
-try {
-  this.setState({
-isLoading: true,
-  })
-
-  const images = await fetchImg(page, perPage, searchImg);
-  // console.log(images)
-
-  this.setState(prevState => ({
-    totalHits: images.totalHits,
-    images: page === 1 ? images.hits : [...prevState.images, ...images.hits],
-    loadMore: page < Math.ceil(images.totalHits / perPage),
-  }))
+  setTotalHits(imageElement.totalHits);
+  setImages(page === 1 ? imageElement.hits : [...images, ...imageElement.hits]);
+  setLoadMore(page < Math.ceil(imageElement.totalHits / perPage))
 } catch (error) {
   console.error(error);
 } finally {
+  setIsLoading(false);
+}}
 
-  this.setState({
-    isLoading: false,
-  })
+  fetchAllImg();
+}, [searchImg, page])
 
-}
 
-  }
-
-  handleSubmitForm = searchImg => {
+const handleSubmitForm = searchImg => {
     if (!searchImg) {
       return;
     }
 
-    this.setState({
-      searchImg,
-      page: 1,
-    });
+    setSearchImg(searchImg);
+    setPage(1);
   }
 
-  onLoadMore = () => {
-
-  this.setState(prevState => ({
-   page: prevState.page + 1, 
-    }))
-
+const onLoadMore = () => {
+    setPage(page + 1);
   }
 
 
-  onOpenModal = (largeImg) => {
-    this.setState({
-      modal: {
-        isOpen: true,
-        data: largeImg,
-      }
-    })
-  }
+const onOpenModal = (largeImg) => { setModal({isOpen: true, data: largeImg,})}
+const onCloseModal = () => { setModal({isOpen: false, data: null,});}
 
-  onCloseModal = () => {
-    this.setState({
-      modal: {
-        isOpen: false,
-        data: null,
-      }
-    })
-  }
-
-  render() {
-
-    const showImg = Array.isArray(this.state.images) && this.state.images.length;
+const showImg = Array.isArray(images) && images.length;
     
-    return (
-      <div className={css.App}>
-
-        <Searchbar handleSubmitForm={this.handleSubmitForm}/>
-
-{this.state.isLoading && <Loader/>}
-
-<ImageGallery>
-
-{showImg && this.state.images.map(({id, webformatURL, largeImageURL, tag}) => {
+return (
+ <div className={css.App}>
+  <Searchbar handleSubmitForm={handleSubmitForm}/>
+    {isLoading && <Loader/>}
+    <ImageGallery>
+  {showImg && images.map(({id, webformatURL, largeImageURL, tag}) => {
   return (
     <ImageGalleryItem
     key={id}
     webformatURL={webformatURL}
     largeImageURL={largeImageURL}
     tag={tag}
-    onOpenModal={this.onOpenModal}
-    />
-  )
-})}
-
+    onOpenModal={onOpenModal}
+    />)})}
 </ImageGallery>
-
-{this.state.loadMore && 
-<Button onLoadMore={this.onLoadMore} showImg={showImg}/>
-}
-
-{this.state.modal.isOpen && 
-<Modal onCloseModal={this.onCloseModal} data={this.state.modal.data}/>}
-
-      </div>
-    );
-  }
+{loadMore && <Button onLoadMore={onLoadMore} showImg={showImg}/>}
+{modal.isOpen && <Modal onCloseModal={onCloseModal} data={modal.data}/>}
+ </div>
+  );
 };
 
 
